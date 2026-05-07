@@ -1,199 +1,200 @@
 import streamlit as st
-import random
 
-# --- 1. 页面设置与全局样式 ---
+# --- 1. 页面配置 ---
 st.set_page_config(page_title="Agouti基因甲基化模拟", layout="centered")
 
-# 注入自定义CSS以控制高度和字体
-st.markdown("""
-    <style>
-    /* 全局字体设置 */
-    html, body, [class*="css"] {
-        font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
-    }
+# --- 2. 固定数据定义 ---
+# 预设一段固定的 DNA 序列（上链）
+# 前7个为启动子区域，后7个为编码区域
+FIXED_TOPLIST = ['A', 'T', 'G', 'C', 'A', 'G', 'T', 'C', 'G', 'A', 'T', 'C', 'G', 'A']
+# 根据碱基互补配对原则生成的下链 (A-T, C-G)
+FIXED_BOTTOMLIST = ['T', 'A', 'C', 'G', 'T', 'C', 'A', 'G', 'C', 'T', 'A', 'G', 'C', 'T']
 
-    /* 减少顶部默认填充，确保内容能塞进屏幕 */
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 1rem;
-        max-width: 800px; /* 限制最大宽度，防止在大屏上太散 */
-    }
-
-    /* 标题样式 */
-    h1 {
-        font-size: 28px;
-        font-weight: 700;
-        color: #2C3E50;
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-
-    /* 小标题样式 */
-    h3 {
-        font-size: 18px;
-        color: #34495E;
-        border-bottom: 2px solid #ecf0f1;
-        padding-bottom: 5px;
-        margin-top: 10px;
-    }
-
-    /* 调节滑块文字 */
-    .stSlider label {
-        font-size: 18px;
-        font-weight: 600;
-        color: #2C3E50;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- 2. 核心数据：DNA序列 ---
-# 预设一段真实的序列，确保碱基互补配对 (A-T, C-G)
-# 左侧7个碱基为启动子区域，右侧为编码区
-DNA_SEQUENCE_TOP = "T A C G G T A C G T A C G G"
-DNA_SEQUENCE_BOT = "A T G C C A T G C A T G C C" # 严格互补
-TOTAL_LEN = len(DNA_SEQUENCE_TOP.split())
-PROMOTER_LEN = 7 # 启动子长度
-
-# --- 3. 侧边栏或顶部：调节模块 (占 1/4 视觉重心) ---
-st.title("🧬 表观遗传学：Agouti 基因模拟")
-
-# 使用容器控制布局
-with st.container():
-    # 居中显示调节器
-    col_c1, col_c2, col_c3 = st.columns([1, 6, 1])
-    with col_c2:
-        st.markdown("### ⚙️ 实验参数设置")
-        methylation_level = st.slider(
-            "调节启动子甲基化程度",
-            min_value=0,
-            max_value=100,
-            value=0,
-            help="拖动滑块模拟不同环境下的甲基化水平"
-        )
-
-        # 根据数值显示状态
-        if methylation_level == 0:
-            status = "🟢 无甲基化 (基因活跃)"
-            status_color = "#27AE60"
-        elif methylation_level < 40:
-            status = "🟡 低甲基化 (基因较活跃)"
-            status_color = "#F1C40F"
-        elif methylation_level < 70:
-            status = "🟠 中等甲基化 (基因受抑)"
-            status_color = "#E67E22"
-        else:
-            status = "🔴 高甲基化 (基因沉默)"
-            status_color = "#C0392B"
-
-        st.markdown(f"<p style='text-align: center; color: {status_color}; font-weight: bold; font-size: 16px;'>当前状态：{status}</p >", unsafe_allow_html=True)
-
-st.markdown("---") # 分割线
-
-# --- 4. 底部：展示模块 (占 3/4 视觉重心) ---
-# 这里我们将 DNA 图和 结果图 并列或上下紧凑排列
-
-# 第一行：DNA 分子结构可视化
-st.markdown("### 🔬 分子结构观察")
-
-# 计算甲基化位点 (仅在启动子区域随机分布)
-methylated_indices = []
-if methylation_level > 0:
-    # 计算需要点亮的红点数量
-    num_dots = max(1, int((methylation_level / 100) * PROMOTER_LEN))
-    # 在前7个位置(启动子)中随机选择
-    methylated_indices = random.sample(range(PROMOTER_LEN), num_dots)
-
-# 绘制 DNA (使用 HTML/CSS 表格布局确保对齐)
-dna_html = """
-<div style="display: flex; justify-content: center; margin-top: 20px;">
-    <div style="background-color: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); font-family: monospace;">
-        <div style="display: flex; flex-direction: column; align-items: center;">
-            <!-- 区域标签 -->
-            <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 5px; font-size: 12px; font-weight: bold; color: #7f8c8d;">
-                <div style="width: 50%; text-align: center; color: #2980b9;">启动子区域 (Promoter)</div>
-                <div style="width: 50%; text-align: center; color: #8e44ad;">编码区域 (Coding)</div>
-            </div>
-
-            <!-- DNA 结构主体 -->
-            <div style="display: flex; align-items: center; font-size: 20px; font-weight: bold;">
-"""
-
-# 生成碱基对循环
-top_bases = DNA_SEQUENCE_TOP.split()
-bot_bases = DNA_SEQUENCE_BOT.split()
-
-for i in range(TOTAL_LEN):
-    # 判断背景色区域
-    if i < PROMOTER_LEN:
-        bg_color = "#EBF5FB" # 浅蓝 (启动子)
-        border_side = "border-right: 2px solid #fff;"
-    else:
-        bg_color = "#F4ECF7" # 浅紫 (编码区)
-        border_side = ""
-
-    # 判断是否有甲基化标记
-    dot_html = ""
-    if i in methylated_indices:
-        dot_html = '<div style="color: #E74C3C; font-size: 24px; line-height: 10px;">•</div>'
-    else:
-        dot_html = '<div style="height: 24px;"></div>' # 占位符保持对齐
-
-    # 单个碱基对单元
-    dna_html += f"""
-        <div style="display: flex; flex-direction: column; align-items: center; margin: 0 4px; background-color: {bg_color}; padding: 5px 8px; border-radius: 8px; {border_side}">
-            {dot_html} <!-- 甲基化红点 -->
-            <div style="color: #2C3E50;">{top_bases[i]}</div> <!-- 上链 -->
-            <div style="height: 4px; border-bottom: 2px solid #BDC3C7; width: 80%; margin: 2px 0;"></div> <!-- 氢键 -->
-            <div style="color: #2C3E50;">{bot_bases[i]}</div> <!-- 下链 -->
-        </div>
+# --- 3. 核心绘图函数 ---
+def draw_dna_structure(methylation_level):
     """
+    绘制 DNA 结构
+    逻辑：序列永远不变，只改变甲基化标记的显示
+    """
+    # 计算启动子区域（前7个）应该有多少个甲基化标记
+    promoter_length = 7
+    # 只有启动子区域会被甲基化
+    methylated_count = int((methylation_level / 100) * promoter_length)
 
-# 闭合 HTML
-dna_html += """
-            </div>
-            <div style="margin-top: 10px; font-size: 11px; color: #95A5A6; text-align: center;">
-                注：红色圆点代表甲基基团(-CH3)，仅出现在启动子区域
-            </div>
-        </div>
-    </div>
-</div>
-"""
-st.markdown(dna_html, unsafe_allow_html=True)
+    # 生成当前状态下的甲基化位置列表（仅在前7个位置中随机）
+    # 为了演示效果稳定，这里我们简单处理：总是从左边开始填充，或者随机
+    # 这里采用随机抽样，但基于固定的范围
+    import random
+    methylated_indices = []
+    if methylation_level > 0:
+        # 在 0 到 6 的索引中随机选择
+        methylated_indices = random.sample(range(promoter_length), methylated_count)
 
-st.markdown("---")
+    # --- 开始绘制 HTML ---
+    st.markdown("### 🧬 分子结构观察 (Agouti 基因启动子区)")
 
-# 第二行：表型与结论
-col_res1, col_res2 = st.columns([1, 1])
+    # 使用 Flex 布局让 DNA 居中且紧凑
+    st.markdown("""
+        <style>
+        .dna-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .dna-row {
+            display: flex;
+        }
+        .base-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 40px;
+            margin: 0 2px;
+            position: relative;
+        }
+        .base-letter {
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #f0f4f8;
+            color: #2c3e50;
+            z-index: 2;
+        }
+        .methyl-mark {
+            width: 12px;
+            height: 12px;
+            background-color: #e74c3c; /* 红色甲基基团 */
+            border-radius: 50%;
+            margin-bottom: 2px;
+            box-shadow: 0 0 5px #e74c3c;
+            z-index: 3;
+        }
+        .spacer {
+            width: 20px; /* 中间空隙 */
+        }
+        .region-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .backbone {
+            height: 40px;
+            width: 2px;
+            background-color: #95a5a6;
+            margin: 0 5px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-with col_res1:
-    st.markdown("### 🐭 宏观表型")
-    # 根据甲基化程度决定小鼠颜色
-    # 甲基化高 -> 基因沉默 -> 无法合成黄色素 -> 黑色/灰色
-    # 甲基化低 -> 基因表达 -> 合成黄色素 -> 黄色/肥胖
-    if methylation_level > 70:
-        st.image(IMG_BLACK, width=150) # 假设你有黑色小鼠图，或者用灰色代替
-        st.caption("毛色：黑色/灰色 (健康)")
-    elif methylation_level > 30:
-        st.image(IMG_GRAY, width=150) # 杂色
-        st.caption("毛色：斑驳色 (中等)")
-    else:
-        st.image(IMG_WHITE, width=150) # 假设白色代表黄色(因为我没有黄色图，用白色代替示意)
-        st.caption("毛色：黄色 (肥胖/易患病)")
+    # 构建 HTML 字符串
+    html_str = '<div class="dna-container">'
 
-with col_res2:
-    st.markdown("### 📝 实验结论")
-    with st.container(border=True):
-        if methylation_level > 70:
-            st.success("**基因表达被抑制**")
-            st.markdown("""
-            - **机制**：启动子区域被大量甲基基团占据。
-            - **结果**：RNA聚合酶无法结合，Agouti 基因**沉默**。
-            - **现象**：小鼠无法合成黄色素，表现为**黑色/灰色**，体型正常。
-            """)
+    # --- 上链 ---
+    html_str += '<div class="region-label" style="align-self: flex-start; margin-left: 20px; color: #27ae60;">启动子区域 (Promoter)</div>'
+    html_str += '<div class="dna-row">'
+
+    for i in range(14):
+        # 判断是否显示甲基化标记 (仅在启动子区 i < 7)
+        show_methyl = (i in methylated_indices)
+
+        html_str += '<div class="base-unit">'
+
+        # 甲基化标记
+        if show_methyl:
+            html_str += '<div class="methyl-mark"></div>'
         else:
-            st.warning("**基因表达活跃**")
-            st.markdown("""
-            - **机制**：启动子区域甲基化程度低，无阻碍。
-            - **结果**：RNA聚合酶顺利结合，Agouti 基因**持续转录**。
-            - **现象**：小鼠持续合成黄色素，表现为**黄色**，且易肥胖。
-            """)
+            html_str += '<div style="height:12px;"></div>' # 占位，保持高度一致
+
+        # 碱基圆圈
+        html_str += f'<div class="base-letter">{FIXED_TOPLIST[i]}</div>'
+
+        html_str += '</div>' # end base-unit
+
+        # 在 7 和 8 之间插入空隙
+        if i == 6:
+            html_str += '<div class="spacer"></div>'
+
+    html_str += '</div>' # end dna-row
+
+    # --- 连接线和下链 ---
+    html_str += '<div class="dna-row" style="height: 10px; align-items: center;">'
+    for i in range(14):
+        html_str += '<div style="width:30px; border-top: 2px dotted #bdc3c7; margin: 0 2px;"></div>'
+        if i == 6:
+            html_str += '<div class="spacer"></div>'
+    html_str += '</div>'
+
+    html_str += '<div class="dna-row">'
+    for i in range(14):
+        html_str += '<div class="base-unit">'
+        html_str += '<div style="height:12px;"></div>' # 下链上方留空
+        html_str += f'<div class="base-letter">{FIXED_BOTTOMLIST[i]}</div>'
+        html_str += '</div>'
+        if i == 6:
+            html_str += '<div class="spacer"></div>'
+    html_str += '</div>'
+
+    # --- 区域标注 ---
+    html_str += '<div class="region-label" style="margin-top:10px; color: #2980b9; border-top: 1px solid #ccc; padding-top:5px; width: 100%; text-align:center;">编码区域 (Coding Sequence)</div>'
+
+    html_str += '</div>' # end container
+
+    st.markdown(html_str, unsafe_allow_html=True)
+
+# --- 4. 主程序布局 ---
+
+# 使用容器控制高度
+with st.container():
+    # --- 第一部分：控制区 ---
+    st.markdown("### ⚙️ 实验参数设置")
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.write("甲基化程度")
+    with col2:
+        methylation_level = st.slider("调节启动子甲基化水平", 0, 100, 0, label_visibility="collapsed")
+
+    st.markdown("---") # 分割线
+
+    # --- 第二部分：DNA 观察区 ---
+    # 调用绘图函数，传入滑块的值，但函数内部保证序列不变
+    draw_dna_structure(methylation_level)
+
+    # --- 第三部分：结果区 ---
+    st.markdown("### 🔬 表型与结论")
+    col_res1, col_res2 = st.columns([1, 1])
+
+    with col_res1:
+        st.subheader("宏观表型")
+        mouse_emoji, mouse_text, mouse_color = get_mouse_info(methylation_level)
+        st.markdown(f"""
+        <div style="text-align: center; padding: 20px; background-color: #f9f9f9; border-radius: 10px; border: 1px solid #eee;">
+            <div style="font-size: 80px;">{mouse_emoji}</div>
+            <div style="font-size: 18px; font-weight: bold; color: {mouse_color};">毛色: {mouse_text}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_res2:
+        st.subheader("分子机制解释")
+        if methylation_level > 60:
+            st.info("🔴 **高度甲基化**\n\n启动子区域被大量甲基基团占据，阻碍了转录因子的结合。Agouti 基因**无法表达**，小鼠呈现**棕黄色**。")
+        elif methylation_level > 30:
+            st.warning("🟠 **部分甲基化**\n\n启动子区域部分被修饰，基因表达受到部分抑制，小鼠呈现**斑驳色**。")
+        else:
+            st.success("🟢 **低甲基化**\n\n启动子区域开放，转录因子顺利结合。Agouti 基因**正常表达**，小鼠呈现**黑色/伪黑色**。")
+
+# --- 辅助函数 ---
+def get_mouse_info(level):
+    if level > 60:
+        return "🐁", "棕黄色 (Agouti)", "#D2B48C"
+    elif level > 30:
+        return "🐁", "斑驳色 (Mottled)", "#8B7355"
+    else:
+        return "🐭", "黑色 (Pseudo-agouti)", "#2F4F4F"
