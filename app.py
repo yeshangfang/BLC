@@ -2,7 +2,7 @@ import streamlit as st
 import os
 
 # --- 1. 页面配置 ---
-st.set_page_config(page_title="Agouti基因甲基化模拟", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Avy基因甲基化模拟", layout="centered", initial_sidebar_state="collapsed")
 
 # --- 2. 核心设定：固定DNA序列 ---
 DNA_TOP_SEQUENCE = "ATGCAGTCGATCGA"
