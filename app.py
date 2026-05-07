@@ -13,7 +13,7 @@ def calculate_photosynthesis_intensity(light_quality, co2_concentration, light_i
 
 # 定义函数生成气泡数量
 def generate_bubble_count(photosynthesis_intensity):
-    bubble_count = max(0,int(photosynthesis_intensity * 5) ) # 假设每单位光合强度产生5个气泡
+    bubble_count = min(50, max(0, int(photosynthesis_intensity * 5)))
     return bubble_count
 
 # 左侧部分：自变量设置
