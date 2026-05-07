@@ -119,47 +119,39 @@ st.caption("注：红色 CH3 代表甲基化修饰。启动子区域甲基化程
 
 st.markdown("---")
 
-# --- 7. 表型观察区 (修正版：使用 gray.png) ---
+# --- 7. 表型观察区 (强制图片显示版) ---
 st.markdown("### 🐭 表型观察")
 col_left, col_right = st.columns([1, 1.5])
+
+# 定义图片文件名 (请确保文件名完全一致)
+IMG_YELLOW = "yellow.png"
+IMG_GRAY = "gray.png"
+IMG_BLACK = "black.png"
 
 with col_left:
     st.markdown("#### 小鼠毛色")
 
-    # 定义图片路径 (已修正为 gray.png)
-    yellow_mouse = "yellow.png"
-    grey_mouse = "gray.png"  # 修正此处
-    black_mouse = "black.png"
-
-    # 默认显示黄色（如果没有图片）
-    current_image = yellow_mouse
-    
-    # 根据滑块数值选择图片
+    # 根据滑块数值选择图片路径
     if methylation_level < 30:
-        # 低甲基化 -> 黄色
-        current_image = yellow_mouse
-        mouse_color_name = "黄色"
+        selected_img = IMG_YELLOW
+        status_desc = "黄色 (活跃)"
     elif methylation_level < 70:
-        # 中等甲基化 -> 灰色
-        current_image = grey_mouse
-        mouse_color_name = "灰色"
+        selected_img = IMG_GRAY
+        status_desc = "灰色 (过渡)"
     else:
-        # 高甲基化 -> 黑色
-        current_image = black_mouse
-        mouse_color_name = "黑色"
+        selected_img = IMG_BLACK
+        status_desc = "黑色 (沉默)"
 
-    # 检查图片是否存在并显示
-    if os.path.exists(current_image):
-        st.markdown(f"""
-        <div style="text-align: center; padding: 20px;">
-            < img src="{current_image}" style="width: 200px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <p style="margin-top:10px; color:#666; font-size: 0.9em;">当前显示：{mouse_color_name}小鼠</p >
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        # 如果找不到图片，显示一个带有文件名的占位符，方便您调试
-        st.warning(f"未找到图片文件：`{current_image}`。请确保图片已上传。")
-        st.image(current_image, caption=f"缺失的图片：{current_image}")
+    # 使用 HTML img 标签强制显示，并添加错误处理
+    # 如果图片加载失败，会显示替代文字
+    st.markdown(f"""
+    <div style="text-align: center; padding: 20px;">
+        < img src="{selected_img}" 
+             alt="小鼠图片" 
+             style="width: 220px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: block; margin: 0 auto;">
+        <p style="margin-top: 15px; color: #555; font-weight: 500;">{status_desc}</p >
+    </div>
+    """, unsafe_allow_html=True)
 
 with col_right:
     st.markdown("#### 实验结论")
