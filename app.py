@@ -53,7 +53,7 @@ if methylation_level < 30:
     status_color = "#F1C40F" # 黄色
 elif methylation_level < 70:
     status_text = "中等甲基化 (过渡型)"
-    status_color = "#D35400" # 褐色
+    status_color = "#7f8c8d" # 灰色
 else:
     status_text = "高甲基化 (基因沉默)"
     status_color = "#2C3E50" # 黑色
@@ -119,45 +119,47 @@ st.caption("注：红色 CH3 代表甲基化修饰。启动子区域甲基化程
 
 st.markdown("---")
 
-# --- 7. 表型观察区 (修复版：使用您的图片文件) ---
+# --- 7. 表型观察区 (修正版：使用 gray.png) ---
 st.markdown("### 🐭 表型观察")
 col_left, col_right = st.columns([1, 1.5])
 
 with col_left:
     st.markdown("#### 小鼠毛色")
 
-    # 检查图片是否存在
-    image_path = "yellow.png"
+    # 定义图片路径 (已修正为 gray.png)
+    yellow_mouse = "yellow.png"
+    grey_mouse = "gray.png"  # 修正此处
+    black_mouse = "black.png"
+
+    # 默认显示黄色（如果没有图片）
+    current_image = yellow_mouse
     
-    if os.path.exists(image_path):
-        # --- 核心变色逻辑 ---
-        # 我们使用 CSS 滤镜来模拟变色
-        # 1. 亮度(brightness)：从 100% 降到 40%（变暗）
-        # 2. 褐色化(sepia)：从 0% 升到 80%（变褐）
-        # 3. 灰度(grayscale)：从 0% 升到 100%（变黑）
-        
-        brightness = 1.0 - (methylation_level / 100) * 0.6
-        sepia = (methylation_level / 100) * 0.8
-        grayscale = methylation_level / 100
+    # 根据滑块数值选择图片
+    if methylation_level < 30:
+        # 低甲基化 -> 黄色
+        current_image = yellow_mouse
+        mouse_color_name = "黄色"
+    elif methylation_level < 70:
+        # 中等甲基化 -> 灰色
+        current_image = grey_mouse
+        mouse_color_name = "灰色"
+    else:
+        # 高甲基化 -> 黑色
+        current_image = black_mouse
+        mouse_color_name = "黑色"
 
-        filter_style = f"filter: brightness({brightness}) sepia({sepia}) grayscale({grayscale}); transition: filter 0.3s ease;"
-
-        # 使用 HTML 标签直接显示图片，确保路径正确
+    # 检查图片是否存在并显示
+    if os.path.exists(current_image):
         st.markdown(f"""
         <div style="text-align: center; padding: 20px;">
-            < img src="{image_path}" style="width: 200px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); {filter_style}">
+            < img src="{current_image}" style="width: 200px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <p style="margin-top:10px; color:#666; font-size: 0.9em;">当前显示：{mouse_color_name}小鼠</p >
         </div>
         """, unsafe_allow_html=True)
     else:
-        # 如果没有图片，显示一个临时的 SVG 占位符
-        st.warning("未找到 'yellow.png'，正在显示临时示意图。请确保图片文件在同级目录下。")
-        st.markdown(f"""
-        <div style="text-align: center; padding: 20px;">
-            <div style="width: 150px; height: 150px; background: {'#2C3E50' if methylation_level > 70 else '#F1C40F'}; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                小鼠示意图
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # 如果找不到图片，显示一个带有文件名的占位符，方便您调试
+        st.warning(f"未找到图片文件：`{current_image}`。请确保图片已上传。")
+        st.image(current_image, caption=f"缺失的图片：{current_image}")
 
 with col_right:
     st.markdown("#### 实验结论")
@@ -177,7 +179,7 @@ with col_right:
         """)
     else:
         st.info(f"""
-        **⚖️ 过渡状态 (褐色)**
+        **⚖️ 过渡状态 (灰色)**
         - **状态**：部分甲基化。
-        - **结果**：基因表达受到部分抑制，毛色介于黄黑之间。
+        - **结果**：基因表达受到部分抑制，毛色呈现**灰色**。
         """)
