@@ -1,67 +1,64 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image, ImageDraw
 
-# 设置页面布局
-st.set_page_config(layout="wide")
+# Function to draw DNA double helix
+def draw_dna(ax, methylation_level):
+    # Parameters for DNA structure
+    num_turns = 10
+    radius = 2
+    pitch = 3.4
+    
+    # Create a spiral path for DNA
+    theta = np.linspace(0, 2 * np.pi * num_turns, 100)
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    z = (theta / (2 * np.pi)) * pitch
+    
+    # Plot two strands of DNA
+    ax.plot(x, y, z, color='blue', label='Strand 1')
+    ax.plot(-x, -y, z, color='green', label='Strand 2')
+    
+    # Highlight methylated regions on one strand
+    if methylation_level > 0:
+        start_index = int((1 - methylation_level) * len(theta))
+        end_index = len(theta)
+        ax.plot(x[start_index:end_index], y[start_index:end_index], z[start_index:end_index], color='red', linewidth=5)
 
-# 定义函数计算光合作用强度
-def calculate_photosynthesis_intensity(light_quality, co2_concentration, light_intensity):
-    # 这里我们假设一个简单的模型：光合作用强度 = 光质 * CO2浓度 * 光照强度
-    photosynthesis_intensity = light_quality * co2_concentration * light_intensity / 1000.0
-    return photosynthesis_intensity
+# Function to create cartoon mouse with fur color based on methylation level
+def create_mouse(methylation_level):
+    base_color = (255, 255, 255)  # White base color
+    dark_color = (192, 192, 192)   # Dark gray for methylated effect
+    
+    # Mix colors based on methylation level
+    mixed_color = tuple(int(base + (dark - base) * methylation_level) for base, dark in zip(base_color, dark_color))
+    
+    # Create an image of a simple cartoon mouse
+    img = Image.new('RGB', (100, 100), color=mixed_color)
+    draw = ImageDraw.Draw(img)
+    draw.ellipse([20, 20, 80, 80], fill=mixed_color)  # Body
+    draw.rectangle([40, 60, 60, 70], fill=(0, 0, 0))   # Tail
+    draw.ellipse([30, 30, 40, 40], fill=(0, 0, 0))     # Left ear
+    draw.ellipse([60, 30, 70, 40], fill=(0, 0, 0))     # Right ear
+    draw.ellipse([40, 40, 50, 50], fill=(0, 0, 0))     # Eye
+    draw.line([40, 40, 50, 50], fill=(0, 0, 0), width=2)  # Nose
+    
+    return img
 
-# 定义函数生成气泡数量
-def generate_bubble_count(photosynthesis_intensity):
-    bubble_count = min(50, max(0, int(photosynthesis_intensity * 5)))
-    return bubble_count
+# Streamlit app
+st.title("DNA Methylation Simulation")
 
-# 左侧部分：自变量设置
-st.sidebar.header("实验条件设置")
-light_quality = st.sidebar.slider("光质 (nm)", min_value=400, max_value=700, value=680)
-co2_concentration = st.sidebar.slider("CO2 浓度 (ppm)", min_value=300, max_value=1500, value=400)
-light_intensity = st.sidebar.slider("光照强度 (μmol/m²/s)", min_value=100, max_value=2000, value=1000)
+# Slider for methylation level
+methylation_level = st.slider("Methylation Level", min_value=0.0, max_value=1.0, value=0.0, step=0.01)
 
-# 计算光合作用强度
-photosynthesis_intensity = calculate_photosynthesis_intensity(light_quality, co2_concentration, light_intensity)
+# Display DNA double helix
+fig = plt.figure(figsize=(6, 6))
+ax = fig.add_subplot(111, projection='3d')
+draw_dna(ax, methylation_level)
+ax.set_axis_off()
+st.pyplot(fig)
 
-# 右侧部分：因变量呈现
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    st.subheader("当前光合作用强度")
-    st.write(f"**{photosynthesis_intensity:.2f} μmol O₂/(g h)**")
-
-    st.subheader("烧杯中气泡数量模拟")
-    bubble_count = generate_bubble_count(photosynthesis_intensity)
-    bubble_svg = f"""
-    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="0" width="200" height="200" fill="#add8e6"/>
-        {''.join(f'<circle cx="{np.random.randint(10, 190)}" cy="{np.random.randint(10, 190-bubble*10)}" r="5" fill="#FFD700"/>' for bubble in range(bubble_count))}
-    </svg>
-    """
-    st.markdown(bubble_svg, unsafe_allow_html=True)
-
-with col2:
-    st.subheader("光合作用强度变化曲线图")
-    # 模拟一段时间内的光合作用强度变化
-    time_points = np.linspace(0, 10, num=100)  # 时间点从0到10小时
-    intensity_values = [calculate_photosynthesis_intensity(light_quality, co2_concentration, li) for li in np.linspace(100, light_intensity, num=100)]
-
-    fig, ax = plt.subplots()
-    ax.plot(time_points, intensity_values, label='光合作用强度')
-    ax.set_xlabel('时间 (小时)')
-    ax.set_ylabel('光合作用强度 (μmol O₂/(g h))')
-    ax.legend()
-    st.pyplot(fig)
-
-# 结论部分
-st.header("实验结论")
-conclusion_text = (
-    f"根据设定的实验条件（光质: {light_quality} nm, "
-    f"CO2 浓度: {co2_concentration} ppm, 光照强度: {light_intensity} μmol/m²/s），"
-    f"计算得到的光合作用强度为 **{photosynthesis_intensity:.2f} μmol O₂/(g h)**。\n\n"
-    f"在烧杯中模拟产生了约 **{bubble_count}** 个气泡，这表明植物在当前条件下进行着活跃的光合作用过程。\n\n"
-    "您可以继续调整实验条件以观察其对光合作用强度的影响。"
-)
-st.write(conclusion_text)
+# Display cartoon mouse
+mouse_image = create_mouse(methylation_level)
+st.image(mouse_image, caption="Cartoon Mouse Phenotype")
