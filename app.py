@@ -34,7 +34,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 4. 侧边栏/顶部控制 ---
-st.title("🧬 表观遗传学模拟：Avy 基因")
+st.title("🧬 表观遗传学模拟器（Avy 基因）")
 st.markdown("---")
 
 col_ctrl_1, col_ctrl_2 = st.columns([1, 4])
