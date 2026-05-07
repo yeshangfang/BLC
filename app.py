@@ -29,7 +29,6 @@ with st.sidebar:
     st.info(f"当前设定：**{methylation_level}%**")
 
 # --- 4. 样式设置 ---
-# 使用 f-string 将 python 变量 methylation_level 注入到 CSS 中
 st.markdown(f"""
     <style>
     /* 全局字体与背景 */
@@ -37,254 +36,254 @@ st.markdown(f"""
     body {{
         background-color: #F7F9FA;
         font-family: 'Inter', sans-serif;
-        color: #333;
     }}
-    /* 卡片容器 */
-    .card {{
+
+    /* DNA 容器样式 */
+    .dna-container {{
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        padding: 24px;
-        margin-bottom: 20px;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
         border: 1px solid #E0E0E0;
     }}
-    /* DNA 碱基样式 */
-    .base {{
-        width: 32px;
-        height: 32px;
+
+    /* DNA 单链样式 */
+    .dna-strand {{
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin: 10px 0;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        font-size: 18px;
+        color: #333;
+    }}
+
+    /* 碱基盒子 */
+    .base-box {{
+        width: 40px;
+        height: 40px;
+        background-color: #E3F2FD;
+        border: 1px solid #90CAF9;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 50%;
-        font-weight: 600;
+        position: relative;
+        transition: all 0.3s ease;
+    }}
+
+    /* 甲基化标记样式（替换红点为CH3） */
+    .methyl-mark {{
+        position: absolute;
+        top: -28px; /* 调整位置，使其在碱基上方 */
         font-size: 14px;
-        z-index: 2;
-    }}
-    .base-A {{ background-color: #FF6B6B; color: white; }} /* 红 */
-    .base-T {{ background-color: #4ECDC4; color: white; }} /* 青 */
-    .base-C {{ background-color: #FFD93D; color: #333; }} /* 黄 */
-    .base-G {{ background-color: #1A535C; color: white; }} /* 深青 */
-
-    /* DNA 骨架线 */
-    .backbone {{
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 2px;
-        background-color: #333;
-        z-index: 0;
-    }}
-    .top-backbone {{ top: 10px; height: 12px; }}
-    .bottom-backbone {{ bottom: 10px; height: 12px; }}
-
-    /* 碱基对连接线 */
-    .connector {{
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 2px;
-        height: 24px;
-        background-color: #A0A0A0;
-        z-index: 1;
-    }}
-    /* 氢键虚线模拟 (仅视觉示意) */
-    .h-bond {{
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 2px;
-        height: 24px;
-        background: repeating-linear-gradient(
-            to bottom,
-            #A0A0A0,
-            #A0A0A0 2px,
-            transparent 2px,
-            transparent 4px
-        );
-        z-index: 1;
-    }}
-
-    /* 甲基化标记 CH3 */
-    .methyl-group {{
-        position: absolute;
-        top: -28px; /* 调整位置使其在碱基上方 */
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 12px;
         font-weight: bold;
-        color: #D62828; /* 深红色文字 */
-        font-family: monospace;
-        background: rgba(255, 255, 255, 0.8);
+        color: #D32F2F;
+        font-family: 'Courier New', monospace;
+        opacity: 0;
+        transform: translateY(5px);
+        transition: all 0.3s ease;
+        background: white;
         padding: 2px 4px;
         border-radius: 4px;
-        border: 1px solid #D62828;
-        z-index: 3;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 24px;
-    }}
-    /* CH3 连接线 */
-    .methyl-line {{
-        position: absolute;
-        top: -4px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 2px;
-        height: 8px;
-        background-color: #D62828;
-        z-index: 2;
+        border: 1px solid #D32F2F;
     }}
 
-    /* 小鼠容器 */
+    /* 连接线 */
+    .connector {{
+        width: 2px;
+        height: 20px;
+        background-color: #B0BEC5;
+        margin: 0 19px; /* 调整连接线位置 */
+    }}
+
+    /* 小鼠图片容器 */
     .mouse-container {{
         position: relative;
-        width: 200px;
-        height: 200px;
+        width: 300px;
+        height: 300px;
         margin: 0 auto;
-        border-radius: 50%;
+        border-radius: 20px;
         overflow: hidden;
-        border: 4px solid #ddd;
-        background-color: #fff;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        background-color: white;
     }}
+
     /* 小鼠图片 */
     .mouse-img {{
         width: 100%;
         height: 100%;
         object-fit: contain;
-        /* 关键：使用亮度滤镜模拟变色。
-           0% = 原图(黄), 100% = 黑。
-           我们将滑块值(0-100)直接映射给滤镜 */
-        filter: brightness(calc(1 - {methylation_level} / 100 * 0.85));
-        transition: filter 0.3s ease;
+        transition: filter 0.5s ease;
     }}
 
-    /* 实验结论高亮 */
-    .conclusion-box {{
-        background-color: #E3F2FD;
-        border-left: 5px solid #2196F3;
-        padding: 15px;
-        border-radius: 4px;
-        font-size: 14px;
+    /* 黑色遮罩层 */
+    .mouse-overlay {{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+    }}
+
+    /* 实验结论卡片 */
+    .conclusion-card {{
+        background: #E8F5E9;
+        border-left: 5px solid #4CAF50;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 30px;
+        font-size: 16px;
         line-height: 1.6;
+        color: #2E7D32;
     }}
-    .tag {{
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 12px;
-        color: white;
-        margin-right: 5px;
+
+    /* 标题样式 */
+    h1 {{
+        color: #1565C0;
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 30px;
+        font-family: 'Inter', sans-serif;
     }}
-    .tag-yellow {{ background-color: #FFC107; }}
-    .tag-brown {{ background-color: #795548; }}
-    .tag-black {{ background-color: #424242; }}
+
+    /* 响应式调整 */
+    @media (max-width: 600px) {{
+        .base-box {{
+            width: 30px;
+            height: 30px;
+            font-size: 14px;
+        }}
+        .methyl-mark {{
+            font-size: 12px;
+            top: -24px;
+        }}
+        .connector {{
+            height: 15px;
+            margin: 0 14px;
+        }}
+        .mouse-container {{
+            width: 250px;
+            height: 250px;
+        }}
+    }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 5. 页面布局 ---
+# --- 5. 页面主体 ---
+st.markdown("<h1>🧬 Agouti 基因甲基化模拟</h1>", unsafe_allow_html=True)
 
-# 标题
-st.markdown("<h2 style='text-align: center; margin-bottom: 30px;'>🐭 Agouti 基因甲基化模拟</h2>", unsafe_allow_html=True)
+# --- 6. DNA 结构可视化 ---
+st.markdown('<div class="dna-container">', unsafe_allow_html=True)
 
-# A. DNA 结构可视化 (HTML)
-st.markdown("<div class='card'>", unsafe_allow_html=True)
-st.markdown("<div style='text-align: center; font-weight: 600; margin-bottom: 20px; color: #555;'>DNA 序列结构 (Agouti 基因启动子区)</div>", unsafe_allow_html=True)
+# 上链
+st.markdown('<div class="dna-strand">', unsafe_allow_html=True)
+for i, base in enumerate(DNA_TOP_SEQUENCE):
+    # 计算当前碱基是否甲基化（根据滑块百分比）
+    # 这里为了演示，我们固定某些位置为甲基化，或者随机
+    # 为了让效果更明显，我们根据滑块值决定显示多少个CH3
+    num_methylated = int(len(DNA_TOP_SEQUENCE) * (methylation_level / 100))
+    # 随机选择甲基化位置（为了稳定性，使用seed）
+    random.seed(42)  # 固定随机种子，保证每次刷新位置不变
+    methylated_indices = random.sample(range(len(DNA_TOP_SEQUENCE)), num_methylated)
 
-# 构建 DNA 的 HTML
-dna_html = "<div style='position: relative; height: 80px; width: 500px; margin: 0 auto; display: flex; justify-content: space-around; align-items: center;'>"
+    is_methylated = i in methylated_indices
 
-# 左侧骨架线
-dna_html += "<div class='backbone top-backbone' style='height: 60px; left: 0; transform: none;'></div>"
-dna_html += "<div class='backbone bottom-backbone' style='height: 60px; left: 0; transform: none;'></div>"
-# 右侧骨架线
-dna_html += "<div class='backbone top-backbone' style='height: 60px; right: 0; left: auto; transform: none;'></div>"
-dna_html += "<div class='backbone bottom-backbone' style='height: 60px; right: 0; left: auto; transform: none;'></div>"
+    methyl_html = '<span class="methyl-mark" style="opacity: 1;">CH₃</span>' if is_methylated else ""
 
-for i, base_top in enumerate(DNA_TOP_SEQUENCE):
-    base_bottom = DNA_BOTTOM_SEQUENCE[i]
+    st.markdown(f"""
+        <div class="base-box">
+            {base}
+            {methyl_html}
+        </div>
+    """, unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-    # 计算位置百分比
-    pos = (i / (len(DNA_TOP_SEQUENCE) - 1)) * 100
+# 连接线
+st.markdown('<div class="dna-strand">', unsafe_allow_html=True)
+for _ in DNA_TOP_SEQUENCE:
+    st.markdown('<div class="connector"></div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-    # 随机决定此位点是否甲基化 (基于滑块概率)
-    # 如果滑块是 80%，则每个位点有 80% 概率显示 CH3
-    is_methylated = random.randint(0, 99) < methylation_level
+# 下链
+st.markdown('<div class="dna-strand">', unsafe_allow_html=True)
+for base in DNA_BOTTOM_SEQUENCE:
+    st.markdown(f"""
+        <div class="base-box">
+            {base}
+        </div>
+    """, unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- 上链 ---
-    dna_html += f"""
-    <div style="position: absolute; left: {pos}%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: space-between;">
-        <!-- 甲基化标记 CH3 -->
-        {'<div class="methyl-group">CH3</div><div class="methyl-line"></div>' if is_methylated else '<div style="height: 28px;"></div>'}
+st.markdown('</div>', unsafe_allow_html=True) # End dna-container
 
-        <div class="base base-{base_top}">{base_top}</div>
-        <div class="{'h-bond' if base_top in ['A', 'T'] else 'connector'}"></div>
-        <div class="base base-{base_bottom}">{base_bottom}</div>
-    </div>
-    """
-
-dna_html += "</div>"
-st.markdown(dna_html, unsafe_allow_html=True)
-
-st.markdown("<div style='text-align: center; font-size: 12px; color: #888; margin-top: 15px;'>注：红色 CH3 代表甲基化修饰。滑块数值越高，出现 CH3 的概率越大。</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True) # Close Card
-
-# B. 表型与结论区域
-col1, col2 = st.columns([1, 1.2])
+# --- 7. 小鼠表型展示 ---
+col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.markdown("<div class='card' style='text-align: center;'>", unsafe_allow_html=True)
-    st.markdown("### 🖼️ 表型观察")
-    st.markdown("<div class='mouse-container'>", unsafe_allow_html=True)
-    # 使用 HTML img 标签确保图片加载，利用 CSS 滤镜变色
-    st.markdown(f'< img src="yellow.png" class="mouse-img" alt="Mouse">', unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.subheader("🐭 表型观察")
+    # 计算遮罩透明度：甲基化越高，遮罩越不透明（小鼠越黑）
+    # 0% 甲基化 -> 0.0 透明度 (黄色)
+    # 100% 甲基化 -> 0.9 透明度 (黑色)
+    overlay_opacity = methylation_level / 100 * 0.9
 
-    # 根据数值显示不同状态
-    status = ""
-    if methylation_level < 30:
-        status = "黄色 (未甲基化)"
-    elif methylation_level < 70:
-        status = "杂色/褐色 (部分甲基化)"
-    else:
-        status = "黑色 (高度甲基化)"
+    # 使用HTML和CSS来实现图片变色
+    mouse_html = f"""
+    <div class="mouse-container">
+        < img src="https://i.imgur.com/8Z4z4zL.png" class="mouse-img"> <!-- 黄色小鼠图片 -->
+        <div class="mouse-overlay" style="opacity: {overlay_opacity};"></div>
+    </div>
+    """
+    st.markdown(mouse_html, unsafe_allow_html=True)
 
-    st.markdown(f"<p style='margin-top:15px; font-weight:bold;'>当前表型：**{status}**</p >", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    # 显示当前颜色状态
+    color_status = "黄色 (肥胖)" if methylation_level < 30 else "褐色 (中间型)" if methylation_level < 70 else "黑色 (苗条)"
+    st.caption(f"当前毛色状态：**{color_status}**")
 
 with col2:
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.markdown("### 📝 实验结论")
-
-    conclusion_text = ""
+    st.subheader("📝 实验结论")
+    # 动态生成结论
     if methylation_level < 30:
-        conclusion_text = """
-        <div class='conclusion-box'>
-            <p><strong>当前状态：</strong> <span class='tag tag-yellow'>低甲基化</span></p >
-            <p><strong>机制分析：</strong> Agouti 基因启动子区域<strong>未甲基化</strong>，RNA聚合酶可以顺利结合。</p >
-            <p><strong>结果：</strong> Agouti 基因<strong>持续高表达</strong>，抑制了黑色素的合成，小鼠毛色呈现<strong>黄色</strong>，且容易肥胖。</p >
-        </div>
+        conclusion = """
+        - **基因表达**：Agouti 基因**高度表达**。
+        - **表型结果**：小鼠毛色呈**黄色**，且容易肥胖，易患糖尿病。
+        - **机制**：启动子区域低甲基化，RNA聚合酶易于结合。
         """
     elif methylation_level < 70:
-        conclusion_text = """
-        <div class='conclusion-box'>
-            <p><strong>当前状态：</strong> <span class='tag tag-brown'>中等甲基化</span></p >
-            <p><strong>机制分析：</strong> Agouti 基因启动子区域发生<strong>部分甲基化</strong>。</p >
-            <p><strong>结果：</strong> 基因表达受到部分抑制，毛色在黄色和黑色之间波动，呈现<strong>杂色/褐色</strong>。</p >
-        </div>
+        conclusion = """
+        - **基因表达**：Agouti 基因**部分表达**。
+        - **表型结果**：小鼠毛色呈**褐色/伪黄色**。
+        - **机制**：启动子区域部分甲基化，基因表达受到一定抑制。
         """
     else:
-        conclusion_text = """
-        <div class='conclusion-box'>
-            <p><strong>当前状态：</strong> <span class='tag tag-black'>高甲基化</span></p >
-            <p><strong>机制分析：</strong> Agouti 基因启动子区域<strong>高度甲基化</strong>，阻碍了转录因子的结合。</p >
-            <p><strong>结果：</strong> Agouti 基因表达被<strong>沉默 (Silenced)</strong>，无法抑制黑色素合成，小鼠毛色呈现<strong>黑色/伪黑色</strong>，且体型健康。</p >
-        </div>
+        conclusion = """
+        - **基因表达**：Agouti 基因**被沉默（不表达）**。
+        - **表型结果**：小鼠毛色呈**黑色**，体型苗条健康。
+        - **机制**：启动子区域高甲基化，阻碍了转录因子的结合。
         """
 
-    st.markdown(conclusion_text, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="conclusion-card">
+        <strong>当前甲基化水平：{methylation_level}%</strong>
+        <ul style="margin-top: 10px; padding-left: 20px;">
+            {"".join([f"<li>{item.strip()}</li>" for item in conclusion.split('\n') if item.strip()])}
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
 
-# 底部说明
-st.markdown("<div style='text-align: center; margin-top: 30px; color: #999; font-size: 12px;'>模拟演示：表观遗传学对基因表达的调控</div>", unsafe_allow_html=True)
+# --- 8. 底部说明 ---
+st.markdown("---")
+st.markdown("""
+<center>
+    <small>
+    **教学说明**：本模拟展示了表观遗传学中的DNA甲基化现象。
+    即使基因序列（DNA）不变，化学修饰（如甲基化）也能显著改变生物的性状。
+    </small>
+</center>
+""", unsafe_allow_html=True)
