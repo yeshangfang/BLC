@@ -2,7 +2,7 @@ import streamlit as st
 import random
 
 # --- 1. 页面设置 ---
-st.set_page_config(page_title="DNA启动子甲基化模拟", layout="wide")
+st.set_page_config(page_title="DNA启动子甲基化模拟", layout="centered")
 
 # --- 2. 图片文件名设置 ---
 IMG_GRAY = "gray.png"
@@ -38,14 +38,14 @@ def draw_horizontal_dna(level):
                 methylated_positions.extend(random.sample(possible_indices, remaining_count))
 
     # --- 开始构建 SVG ---
-    width = 900  
-    height = 220
+    width = 800  
+    height = 200
     svg = f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg" style="background-color: #f0f2f6; border-radius: 10px;">'
     
     y_top = 70
     y_bottom = 150
     start_x = 50
-    end_x = 850
+    end_x = 750
     
     svg += f'<line x1="{start_x}" y1="{y_top}" x2="{end_x}" y2="{y_top}" stroke="{strand_color}" stroke-width="4" />'
     svg += f'<line x1="{start_x}" y1="{y_bottom}" x2="{end_x}" y2="{y_bottom}" stroke="{strand_color}" stroke-width="4" />'
