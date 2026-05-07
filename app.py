@@ -3,67 +3,71 @@ import streamlit as st
 # --- 1. 页面设置 ---
 st.set_page_config(page_title="DNA甲基化模拟器", layout="centered")
 
-# --- 2. 核心设置：图片文件名 (请严格核对！) ---
-# 请去你的 GitHub 仓库里看一眼，图片后缀是 .png 还是 .jpg？文件名中间有空格吗？
-# 必须和 GitHub 里的一模一样（区分大小写）！
-IMG_WHITE = "white.png"
+# --- 2. 核心设置：图片文件名 ---
+# 既然你的小鼠图片正常，说明这两个文件名是对的，保持不动即可
 IMG_GRAY = "gray.png"
 IMG_BLACK = "black.png"
+IMG_WHITE = "white.png"
 
-# --- 3. 美化 DNA 的 CSS 代码 ---
-# 我们用代码画一个动态的双螺旋，比图片更清晰，且不会加载失败
+# --- 3. 注入美观的 DNA 双螺旋 CSS 动画 ---
+# 这里我们用代码画一个旋转的双螺旋，替代原来的静态圆圈
 st.markdown("""
     <style>
-    /* 容器 */
-    .dna-scene {
+    /* DNA 容器 */
+    .dna-container {
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 150px;
-        margin: 20px 0;
-        perspective: 600px;
+        height: 120px;
+        margin-bottom: 10px;
+        perspective: 800px; /* 3D 透视感 */
     }
-    /* 螺旋骨架 */
-    .strand {
+    /* 螺旋轨道通用样式 */
+    .helix {
         position: absolute;
-        width: 120px;
+        width: 100px;
         height: 100px;
-        border: 3px solid #4CAF50;
+        border: 4px solid #4CAF50; /* 绿色轨道 */
         border-radius: 50%;
-        border-color: #4CAF50 transparent #4CAF50 transparent;
-        animation: spin 2s infinite linear;
         opacity: 0.8;
+        box-shadow: 0 0 10px #4CAF50;
     }
-    .strand:nth-child(2) {
-        transform: rotateY(180deg);
-        border-color: transparent #FF5722 transparent #FF5722;
+    /* 左边轨道 */
+    .left-strand {
+        animation: spin-left 2s infinite linear;
+        border-right-color: transparent; /* 制造螺旋缺口感 */
     }
-    /* 碱基对连接线 */
+    /* 右边轨道 */
+    .right-strand {
+        animation: spin-right 2s infinite linear;
+        border-left-color: transparent;
+    }
+    /* 中间的横杠（碱基对） */
     .rung {
         position: absolute;
         width: 100px;
-        height: 2px;
-        background: #ddd;
+        height: 4px;
+        background: #81C784;
         top: 50%;
-        transform-origin: center;
+        transform: translateY(-50%) rotateX(70deg);
+        box-shadow: 0 0 5px #81C784;
     }
     /* 动画定义 */
-    @keyframes spin {
+    @keyframes spin-left {
         0% { transform: rotateY(0deg); }
         100% { transform: rotateY(360deg); }
     }
+    @keyframes spin-right {
+        0% { transform: rotateY(180deg); }
+        100% { transform: rotateY(540deg); }
+    }
     </style>
 
-    <div class="dna-scene">
-        <div class="strand"></div>
-        <div class="strand"></div>
-        <!-- 模拟几条连接线 -->
-        <div class="rung" style="transform: rotate(0deg);"></div>
-        <div class="rung" style="transform: rotate(30deg);"></div>
-        <div class="rung" style="transform: rotate(60deg);"></div>
-        <div class="rung" style="transform: rotate(90deg);"></div>
-        <div class="rung" style="transform: rotate(120deg);"></div>
-        <div class="rung" style="transform: rotate(150deg);"></div>
+    <!-- HTML 结构：两个旋转的圈 + 中间横杠 -->
+    <div class="dna-container">
+        <div class="helix left-strand"></div>
+        <div class="helix right-strand"></div>
+        <div class="rung"></div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -72,38 +76,31 @@ st.title("🧬 DNA 双螺旋甲基化模拟器")
 st.write("通过拖动滑块，观察小鼠毛色的变化以及 DNA 甲基化的程度。")
 
 # --- 5. 滑块控制 ---
-methylation_level = st.slider(
-    "调节甲基化水平",
-    min_value=0,
-    max_value=100,
-    value=0,
-    step=1
-)
+methylation_level = st.slider("调节甲基化水平", 0, 100, 50)
 
 # --- 6. 逻辑判断与显示 ---
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("宏观表现：小鼠毛色")
-    if methylation_level < 30:
-        st.image(IMG_BLACK, caption="低甲基化：毛色黑色 (Agouti 基因活跃)")
-    elif methylation_level < 70:
-        st.image(IMG_GRAY, caption="中等甲基化：毛色灰褐色")
+    if methylation_level > 66:
+        st.image(IMG_BLACK, caption="高甲基化：毛色黑色", width=250)
+        status = "高度抑制"
+        desc = "基因表达被强力阻断，毛色呈现深黑色。"
+    elif methylation_level < 33:
+        st.image(IMG_WHITE, caption="低甲基化：毛色黄色", width=250)
+        status = "活跃表达"
+        desc = "基因正常表达，毛色呈现亮黄色。"
     else:
-        st.image(IMG_WHITE, caption="高甲基化：毛色白色 (Agouti 基因沉默)")
+        st.image(IMG_GRAY, caption="中甲基化：毛色灰褐色", width=250)
+        status = "部分抑制"
+        desc = "基因表达受到部分阻碍，毛色呈现中间态。"
 
 with col2:
     st.subheader("微观分析：DNA 状态")
-    # 根据滑块数值显示不同的文字描述
-    if methylation_level < 30:
-        st.markdown("🔴 **状态：基因活跃**")
-        st.write("DNA 启动子区域几乎没有甲基化修饰。")
-        st.write("转录因子可以顺利结合，Agouti 基因大量表达，导致小鼠呈现黑色。")
-    elif methylation_level < 70:
-        st.markdown("🟠 **状态：部分抑制**")
-        st.write("DNA 上出现了一些甲基化标记。")
-        st.write("基因表达受到部分阻碍，毛色呈现中间态。")
-    else:
-        st.markdown("🟢 **状态：基因沉默**")
-        st.write("DNA 启动子区域高度甲基化。")
-        st.write("转录机器无法结合，Agouti 基因被关闭，小鼠恢复野生型白色。")
+    # 这里我们不再显示图片，而是用文字和状态点来描述
+    st.markdown(f"### 状态：**{status}**")
+    st.write(desc)
+
+    # 简单的视觉条
+    st.progress(methylation_level)
