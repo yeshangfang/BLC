@@ -1,64 +1,64 @@
 import streamlit as st
 import matplotlib.pyplot as plt
-import numpy as np
 from PIL import Image, ImageDraw
+import numpy as np
 
 # Function to draw DNA double helix
 def draw_dna(ax, methylation_level):
-    # Parameters for DNA structure
-    num_turns = 10
-    radius = 2
-    pitch = 3.4
+    # Parameters for the DNA structure
+    num_turns = 3
+    radius = 0.5
+    pitch = 2 * np.pi / num_turns
     
-    # Create a spiral path for DNA
-    theta = np.linspace(0, 2 * np.pi * num_turns, 100)
-    x = radius * np.cos(theta)
-    y = radius * np.sin(theta)
-    z = (theta / (2 * np.pi)) * pitch
+    # Generate points for one turn of the helix
+    t = np.linspace(0, num_turns * 2 * np.pi, 1000)
+    x = radius * np.cos(t)
+    y = radius * np.sin(t)
+    z = t * pitch / (num_turns * 2 * np.pi)
     
     # Plot two strands of DNA
-    ax.plot(x, y, z, color='blue', label='Strand 1')
-    ax.plot(-x, -y, z, color='green', label='Strand 2')
+    ax.plot(x, y, z, color='blue', lw=2)
+    ax.plot(-x, -y, z, color='green', lw=2)
     
-    # Highlight methylated regions on one strand
-    if methylation_level > 0:
-        start_index = int((1 - methylation_level) * len(theta))
-        end_index = len(theta)
-        ax.plot(x[start_index:end_index], y[start_index:end_index], z[start_index:end_index], color='red', linewidth=5)
+    # Add methyl groups based on methylation level
+    for i in range(int(methylation_level * len(t))):
+        if i % 10 == 0:  # Only add every 10th point for visualization purposes
+            angle = t[i]
+            mx = radius * 1.1 * np.cos(angle)
+            my = radius * 1.1 * np.sin(angle)
+            mz = z[i]
+            ax.scatter(mx, my, mz, color='red', s=10)  # Red dot representing a methyl group
 
-# Function to create cartoon mouse with fur color based on methylation level
-def create_mouse(methylation_level):
-    base_color = (255, 255, 255)  # White base color
-    dark_color = (192, 192, 192)   # Dark gray for methylated effect
+# Function to display mouse phenotype image
+def get_mouse_phenotype_image(methylation_level):
+    base_image_path = "mouse_base.png"
+    white_image_path = "mouse_white.png"
+    black_image_path = "mouse_black.png"
     
-    # Mix colors based on methylation level
-    mixed_color = tuple(int(base + (dark - base) * methylation_level) for base, dark in zip(base_color, dark_color))
+    base_img = Image.open(base_image_path).convert("RGBA")
+    white_img = Image.open(white_image_path).convert("RGBA")
+    black_img = Image.open(black_image_path).convert("RGBA")
     
-    # Create an image of a simple cartoon mouse
-    img = Image.new('RGB', (100, 100), color=mixed_color)
-    draw = ImageDraw.Draw(img)
-    draw.ellipse([20, 20, 80, 80], fill=mixed_color)  # Body
-    draw.rectangle([40, 60, 60, 70], fill=(0, 0, 0))   # Tail
-    draw.ellipse([30, 30, 40, 40], fill=(0, 0, 0))     # Left ear
-    draw.ellipse([60, 30, 70, 40], fill=(0, 0, 0))     # Right ear
-    draw.ellipse([40, 40, 50, 50], fill=(0, 0, 0))     # Eye
-    draw.line([40, 40, 50, 50], fill=(0, 0, 0), width=2)  # Nose
+    mask = Image.new('L', base_img.size, int(methylation_level * 255))
+    composite_img = Image.composite(white_img, black_img, mask)
+    final_img = Image.alpha_composite(base_img, composite_img)
     
-    return img
+    return final_img
 
-# Streamlit app
-st.title("DNA Methylation Simulation")
+# Main function to run the Streamlit app
+def main():
+    st.title("DNA Methylation and Gene Transcription Simulation")
+    
+    methylation_level = st.slider("Methylation Level", min_value=0.0, max_value=1.0, step=0.01)
+    
+    fig = plt.figure(figsize=(8, 4))
+    ax = fig.add_subplot(projection='3d')
+    draw_dna(ax, methylation_level)
+    ax.set_axis_off()
+    st.pyplot(fig)
+    
+    mouse_image = get_mouse_phenotype_image(methylation_level)
+    st.image(mouse_image, caption="Mouse Phenotype")
 
-# Slider for methylation level
-methylation_level = st.slider("Methylation Level", min_value=0.0, max_value=1.0, value=0.0, step=0.01)
-
-# Display DNA double helix
-fig = plt.figure(figsize=(6, 6))
-ax = fig.add_subplot(111, projection='3d')
-draw_dna(ax, methylation_level)
-ax.set_axis_off()
-st.pyplot(fig)
-
-# Display cartoon mouse
-mouse_image = create_mouse(methylation_level)
-st.image(mouse_image, caption="Cartoon Mouse Phenotype")
+if __name__ == "__main__":
+    main()
