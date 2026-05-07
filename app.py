@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 # --- 1. 页面配置 ---
 st.set_page_config(page_title="Agouti基因甲基化模拟", layout="centered", initial_sidebar_state="collapsed")
@@ -7,12 +8,32 @@ st.set_page_config(page_title="Agouti基因甲基化模拟", layout="centered", 
 DNA_TOP_SEQUENCE = "ATGCAGTCGATCGA"
 
 def get_complement(base):
+    """严格互补配对：A-T, C-G"""
     pairs = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
     return pairs.get(base, '')
 
 DNA_BOTTOM_SEQUENCE = "".join([get_complement(b) for b in DNA_TOP_SEQUENCE])
 
-# --- 3. 侧边栏/顶部控制 ---
+# --- 3. 样式设置 ---
+st.markdown("""
+    <style>
+    /* 全局字体与背景 */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+    body {
+        background-color: #F7F9FA;
+        font-family: 'Inter', sans-serif;
+        color: #2C3E50;
+    }
+    /* 隐藏菜单 */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    /* 标题样式 */
+    h1, h2, h3 {font-weight: 600; color: #2C3E50;}
+    .block-container {padding-top: 2rem;}
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 4. 侧边栏/顶部控制 ---
 st.title("🧬 表观遗传学模拟：Agouti 基因")
 st.markdown("---")
 
@@ -43,7 +64,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- 4. 核心功能：绘制DNA结构 (带CH3标记) ---
+# --- 5. 核心功能：绘制DNA结构 ---
 def draw_dna_structure(level):
     width = 800
     height = 260
@@ -80,19 +101,16 @@ def draw_dna_structure(level):
         svg += f'<text x="{cx}" y="{y_top}" text-anchor="middle" font-size="20" font-weight="bold" fill="#2C3E50">{top_base}</text>'
         svg += f'<text x="{cx}" y="{y_bottom+30}" text-anchor="middle" font-size="20" font-weight="bold" fill="#2C3E50">{bottom_base}</text>'
 
-        # 绘制 CH3 标记 (仅在启动子区域)
+        # 绘制 CH3 标记
         if i in methylated_indices:
-            # 红色圆底
             svg += f'<circle cx="{cx}" cy="{y_top-30}" r="14" fill="#E74C3C"/>'
-            # CH3 文字
             svg += f'<text x="{cx}" y="{y_top-24}" text-anchor="middle" font-size="10" font-weight="bold" fill="white">CH3</text>'
-            # 连接线
             svg += f'<line x1="{cx}" y1="{y_top-16}" x2="{cx}" y2="{y_top-5}" stroke="#E74C3C" stroke-width="2"/>'
 
     svg += '</svg>'
     return svg
 
-# --- 5. 页面布局展示 ---
+# --- 6. 页面布局展示 ---
 
 # 分子结构区
 st.markdown("### 🔬 分子结构观察")
@@ -101,56 +119,45 @@ st.caption("注：红色 CH3 代表甲基化修饰。启动子区域甲基化程
 
 st.markdown("---")
 
-# --- 6. 表型观察区 (修复版：使用代码生成小鼠图片) ---
+# --- 7. 表型观察区 (修复版：使用您的图片文件) ---
 st.markdown("### 🐭 表型观察")
 col_left, col_right = st.columns([1, 1.5])
-
-# 定义一个函数，用代码画一只可爱的小鼠（SVG格式）
-def get_mouse_svg():
-    return """
-    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-        <!-- 尾巴 -->
-        <path d="M 60 140 Q 20 160 40 120" stroke="#555" stroke-width="4" fill="none"/>
-        <!-- 身体 -->
-        <ellipse cx="100" cy="120" rx="50" ry="40" fill="#FFD700" stroke="#555" stroke-width="2"/>
-        <!-- 头 -->
-        <circle cx="140" cy="90" r="30" fill="#FFD700" stroke="#555" stroke-width="2"/>
-        <!-- 耳朵 -->
-        <circle cx="155" cy="65" r="10" fill="#FFD700" stroke="#555" stroke-width="2"/>
-        <circle cx="125" cy="65" r="10" fill="#FFD700" stroke="#555" stroke-width="2"/>
-        <!-- 眼睛 -->
-        <circle cx="150" cy="85" r="3" fill="black"/>
-        <!-- 鼻子 -->
-        <circle cx="160" cy="95" r="2" fill="pink"/>
-    </svg>
-    """
 
 with col_left:
     st.markdown("#### 小鼠毛色")
 
-    # 计算滤镜参数：实现 黄 -> 褐 -> 黑 的过渡
-    # 亮度：1.0 (全亮黄) -> 0.3 (暗黑)
-    brightness = 1.0 - (methylation_level / 100) * 0.7
-    # 饱和度：1.0 (鲜艳黄) -> 0.1 (接近黑白)
-    saturate = 1.0 - (methylation_level / 100) * 0.9
-    # 褐色化(Sepia)：0 -> 1 (增加褐色调，模拟中间态)
-    sepia = methylation_level / 100
+    # 检查图片是否存在
+    image_path = "yellow.png"
+    
+    if os.path.exists(image_path):
+        # --- 核心变色逻辑 ---
+        # 我们使用 CSS 滤镜来模拟变色
+        # 1. 亮度(brightness)：从 100% 降到 40%（变暗）
+        # 2. 褐色化(sepia)：从 0% 升到 80%（变褐）
+        # 3. 灰度(grayscale)：从 0% 升到 100%（变黑）
+        
+        brightness = 1.0 - (methylation_level / 100) * 0.6
+        sepia = (methylation_level / 100) * 0.8
+        grayscale = methylation_level / 100
 
-    filter_style = f"filter: brightness({brightness}) saturate({saturate}) sepia({sepia});"
+        filter_style = f"filter: brightness({brightness}) sepia({sepia}) grayscale({grayscale}); transition: filter 0.3s ease;"
 
-    # 使用 data URI 直接嵌入 SVG 代码，确保图片永远显示
-    mouse_svg_code = get_mouse_svg()
-    import base64
-    svg_bytes = mouse_svg_code.encode('utf-8')
-    b64_str = base64.b64encode(svg_bytes).decode()
-    img_src = f"data:image/svg+xml;base64,{b64_str}"
-
-    # 渲染图片并应用滤镜
-    st.markdown(f"""
-    <div style="text-align: center; padding: 20px;">
-        < img src="{img_src}" style="width: 150px; height: 150px; {filter_style} transition: filter 0.3s ease;">
-    </div>
-    """, unsafe_allow_html=True)
+        # 使用 HTML 标签直接显示图片，确保路径正确
+        st.markdown(f"""
+        <div style="text-align: center; padding: 20px;">
+            < img src="{image_path}" style="width: 200px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); {filter_style}">
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # 如果没有图片，显示一个临时的 SVG 占位符
+        st.warning("未找到 'yellow.png'，正在显示临时示意图。请确保图片文件在同级目录下。")
+        st.markdown(f"""
+        <div style="text-align: center; padding: 20px;">
+            <div style="width: 150px; height: 150px; background: {'#2C3E50' if methylation_level > 70 else '#F1C40F'}; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                小鼠示意图
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 with col_right:
     st.markdown("#### 实验结论")
